@@ -174,12 +174,15 @@ namespace GameJumpty.Game.Core
 
         private static string[] GetRandomForm()
         {
-            return _random.Next(1, 4) switch
+            return _random.Next(1, 7) switch
             {
                 1 => ConsoleElements.Block,
                 2 => ConsoleElements.Cactus,
                 3 => ConsoleElements.Snake,
-                _ => ConsoleElements.Block
+                4 => ConsoleElements.Camel,
+                5 => ConsoleElements.Gas,
+                6 => ConsoleElements.Snail,
+                _ => ConsoleElements.Cactus
             };
 
         }

@@ -35,6 +35,39 @@
             "  ╰────┘"
         };
 
+        public static readonly string[] Snail = new string[]
+        {
+            " O╮O╮ ",
+            "╭┘└┘│ ",
+            "╰──╮╰─╮",
+            "╭────╮│",
+            "│╭──╮││",
+            "│╰───╯│",
+            "╰─────╯"
+        };
+
+        public static readonly string[] Camel = new string[]
+        {
+            "╭─o    ",
+            "╰╮│    ",
+            " ││╭╮╭╮",
+            " │╰╯╰╯|",
+            " │╭──╮│",
+            " ││  ││",
+            " ││  ││"
+        };
+
+        public static readonly string[] Gas = new string[]
+        {
+            "╭─────╮",
+            "│╭GAS╮│",
+            "│╰───╯│",
+            "│   █││",
+            "│   │││",
+            "│   │││",
+            "│   ╰╯│"
+        };
+
         public static readonly string[] CharacterIdle = new string[]
         {
             "  ┏┳┓  ",
