@@ -71,7 +71,11 @@ namespace GameJumpty.Game.Core
                                 {
                                     jumpTimeCurr = 0;
                                     IsAlreadyInAir = false;
-                                    result++;
+
+                                    if (character.Position >= w || (character.Position <= 7 && w >= 50))
+                                    {
+                                        result++;
+                                    }
                                 }
                             }
 

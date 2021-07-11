@@ -38,4 +38,6 @@ Jumpy himself and the Obstacles for him to jump over are all drawn using Unicode
 
 ![GitHub Logo](res/scrot/jumpty_drawings.jpg)
 
+![GitHub Logo](res/scrot/jumpty_obstacles.jpg)
+
 \~THE END\~
