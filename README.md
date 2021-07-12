@@ -13,6 +13,7 @@ It was created in order to test the execution of a few parallel tasks. The expec
 ## Technologies
 
 using System.Threading.Tasks;
+
 using Newtonsoft.Json;
 
 ## Instructions
