@@ -11,16 +11,18 @@ namespace GameJumpty.Game.Core
     {
         private static readonly Random _random = new Random();
 
-        public static Direction? DirectionNow { get; set; }
+        public static Command CurrentCommand { get; set; }
+
+        public static Direction CurrentDirection { get; set; }
 
         public static bool IsAlreadyInAir { get; set; }
 
         public static void ShowMenu()
         {
-            ConsolePrinter.PrintLine(ConsoleElements.Menu);
+            ConsolePrinter.PrintLine(string.Format(ConsoleElements.Menu, MusicManager.IsMusicOn ? ConsoleElements.On : ConsoleElements.Off));
         }
 
-        public static void Play()
+        public static async Task PlayAsync(CancellationTokenSource sourceMain)
         {
             int jumpTimeCurr = GameConstants.JumpTimeCurrent;
             int jumpTimeMax = GameConstants.JumpTimeMaximum;
@@ -29,16 +31,34 @@ namespace GameJumpty.Game.Core
 
             while (true)
             {
-                int result = 0;
-                character.Position = 4;
+                int result = GameConstants.ResultDefault;
+                character.Position = GameConstants.DefaultCharacterPosition;
+
+                // The cancellation token is needed for the song that would be playing on a Worker Thread
+                // to be stopped from the current Main Thread once the game is over (WON / LOST) 
+                CancellationTokenSource sourceMusic = new CancellationTokenSource();
+
+                var song = MusicManager.GetRandomSong();
+
+                if (MusicManager.IsMusicOn)
+                {
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+                    MusicManager.PlayMusicAsync(song, sourceMusic, sourceMain);
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+                }
 
                 while (true)
                 {
-                    DirectionNow = Direction.Idle;
+                    if (!MusicManager.IsMusicOn)
+                    {
+                        sourceMusic.Cancel();
+                    }
+
+                    CurrentDirection = Direction.Idle;
 
                     try
                     {
-                        string[] form = GetRandomForm();
+                        string[] form = GetRandomObstacle();
 
                         for (int w = Console.WindowWidth - form.Length - 1; w >= 0; w--)
                         {
@@ -48,17 +68,22 @@ namespace GameJumpty.Game.Core
                             }
 
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-                            SetDirectionByInput();
+                            SetDirectionByInputAsync(sourceMain);
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+
+                            if (sourceMain.Token.IsCancellationRequested)
+                            {
+                                return;
+                            }
 
                             MoveHorizontally(character);
 
-                            if (DirectionNow == null)
+                            if (CurrentCommand == Command.Quit)
                             {
                                 break;
                             }
 
-                            if (DirectionNow == Direction.Up)
+                            if (CurrentDirection == Direction.Up)
                             {
                                 IsAlreadyInAir = true;
                             }
@@ -84,53 +109,30 @@ namespace GameJumpty.Game.Core
 
                             if (IsAlreadyInAir)
                             {
-                                ConsolePrinter.PrintLine(new string(' ', character.Position) + ConsoleElements.CharacterJump[0]);
-                                ConsolePrinter.PrintLine(new string(' ', character.Position) + ConsoleElements.CharacterJump[1]);
-                                ConsolePrinter.PrintLine(new string(' ', character.Position) + ConsoleElements.CharacterJump[2]);
-                                ConsolePrinter.PrintLine(new string(' ', character.Position) + ConsoleElements.CharacterJump[3]);
-                                ConsolePrinter.PrintLine(new string(' ', character.Position) + ConsoleElements.CharacterJump[4]);
-                                ConsolePrinter.PrintLine();
-                                ConsolePrinter.PrintLine();
-                                ConsolePrinter.PrintLine();
-
-                                ConsolePrinter.PrintLine(new string(' ', w) + form[0], ConsoleColor.Green);
-                                ConsolePrinter.PrintLine(new string(' ', w) + form[1], ConsoleColor.Green);
-                                ConsolePrinter.PrintLine(new string(' ', w) + form[2], ConsoleColor.Green);
-                                ConsolePrinter.PrintLine(new string(' ', w) + form[3], ConsoleColor.Green);
-                                ConsolePrinter.PrintLine(new string(' ', w) + form[4], ConsoleColor.Green);
-                                ConsolePrinter.PrintLine(new string(' ', w) + form[5], ConsoleColor.Green);
-                                ConsolePrinter.PrintLine(new string(' ', w) + form[6], ConsoleColor.Green);
+                                for (int i = 0; i <= 4; i++)
+                                {
+                                    ConsolePrinter.PrintLine(new string(' ', character.Position) + ConsoleElements.CharacterJump[i]);
+                                }
+                                for (int i = 1; i <= 3; i++)
+                                {
+                                    ConsolePrinter.PrintLine();
+                                }
+                                for (int i = 0; i <= 6; i++)
+                                {
+                                    ConsolePrinter.PrintLine(new string(' ', w) + form[i], ConsoleColor.Green);
+                                }
                             }
                             else
                             {
-                                ConsolePrinter.PrintLine();
-                                ConsolePrinter.PrintLine();
-                                ConsolePrinter.PrintLine();
-                                ConsolePrinter.PrintLine();
-                                ConsolePrinter.PrintLine();
-                                ConsolePrinter.PrintLine();
-                                ConsolePrinter.PrintLine();
-                                ConsolePrinter.PrintLine();
-
-                                if (character.Position <= w)
+                                for (int i = 1; i <= 8; i++)
                                 {
-                                    ConsolePrinter.PrintLine(new string(' ', character.Position) + ConsoleElements.CharacterIdle[0] + new string(' ', w - 7 - character.Position) + form[0]);
-                                    ConsolePrinter.PrintLine(new string(' ', character.Position) + ConsoleElements.CharacterIdle[1] + new string(' ', w - 7 - character.Position) + form[1]);
-                                    ConsolePrinter.PrintLine(new string(' ', character.Position) + ConsoleElements.CharacterIdle[2] + new string(' ', w - 7 - character.Position) + form[2]);
-                                    ConsolePrinter.PrintLine(new string(' ', character.Position) + ConsoleElements.CharacterIdle[3] + new string(' ', w - 7 - character.Position) + form[3]);
-                                    ConsolePrinter.PrintLine(new string(' ', character.Position) + ConsoleElements.CharacterIdle[4] + new string(' ', w - 7 - character.Position) + form[4]);
-                                    ConsolePrinter.PrintLine(new string(' ', character.Position) + ConsoleElements.CharacterIdle[5] + new string(' ', w - 7 - character.Position) + form[5]);
-                                    ConsolePrinter.PrintLine(new string(' ', character.Position) + ConsoleElements.CharacterIdle[6] + new string(' ', w - 7 - character.Position) + form[6]);
+                                    ConsolePrinter.PrintLine();
                                 }
-                                else
+                                for (int i = 0; i <= 6; i++)
                                 {
-                                    ConsolePrinter.PrintLine(new string(' ', w) + form[0] + new string(' ', character.Position - w - 7) + ConsoleElements.CharacterIdle[0]);
-                                    ConsolePrinter.PrintLine(new string(' ', w) + form[1] + new string(' ', character.Position - w - 7) + ConsoleElements.CharacterIdle[1]);
-                                    ConsolePrinter.PrintLine(new string(' ', w) + form[2] + new string(' ', character.Position - w - 7) + ConsoleElements.CharacterIdle[2]);
-                                    ConsolePrinter.PrintLine(new string(' ', w) + form[3] + new string(' ', character.Position - w - 7) + ConsoleElements.CharacterIdle[3]);
-                                    ConsolePrinter.PrintLine(new string(' ', w) + form[4] + new string(' ', character.Position - w - 7) + ConsoleElements.CharacterIdle[4]);
-                                    ConsolePrinter.PrintLine(new string(' ', w) + form[5] + new string(' ', character.Position - w - 7) + ConsoleElements.CharacterIdle[5]);
-                                    ConsolePrinter.PrintLine(new string(' ', w) + form[6] + new string(' ', character.Position - w - 7) + ConsoleElements.CharacterIdle[6]);
+                                    ConsolePrinter.PrintLine(character.Position <= w ?
+                                    (new string(' ', character.Position) + ConsoleElements.CharacterIdle[i] + new string(' ', w - 7 - character.Position) + form[i]) :
+                                    (new string(' ', w) + form[i] + new string(' ', character.Position - w - 7) + ConsoleElements.CharacterIdle[i]));
                                 }
                             }
 
@@ -138,47 +140,65 @@ namespace GameJumpty.Game.Core
 
                             for (int k = 0; k < 13; k++)
                             {
-                                ConsolePrinter.PrintLine(k != 6 ? ConsoleElements.Ground : String.Format(ConsoleElements.Result, result.ToString("D6")), ConsoleColor.DarkYellow);
+                                ConsolePrinter.PrintLine(k != 6 ?
+                                    ConsoleElements.Ground :
+                                    string.Format(ConsoleElements.Result, result.ToString("D6")), ConsoleColor.DarkYellow);
                             }
 
-                            DirectionNow = Direction.Idle;
+                            CurrentDirection = Direction.Idle;
                             Thread.Sleep(50);
                             Console.Clear();
                         };
 
-                        if (DirectionNow == null)
+                        if (CurrentCommand == Command.Quit)
                         {
                             break;
                         }
                     }
                     catch (Exception)
                     {
+                        // LOST
                         Console.Clear();
-                        ConsolePrinter.PrintLine(ConsoleElements.Lost, ConsoleColor.Red);
-                        character.Position = 4;
-                        result = 0;
-                        Thread.Sleep(3000);
+                        ConsolePrinter.PrintLine(string.Format(ConsoleElements.Lost, result.ToString("D2")), ConsoleColor.Red);
+                        await ResultsManager.ChangeResultsAsync(false);
+                        break;
                     }
 
+                    // WON
                     if (result == GameConstants.ResultWinning)
                     {
+                        Console.Clear();
+                        ConsolePrinter.PrintLine(ConsoleElements.Won, ConsoleColor.Green);
+                        await ResultsManager.ChangeResultsAsync(true);
                         break;
                     }
                 }
 
-                if (DirectionNow == null)
+                sourceMusic.Cancel();
+                Thread.Sleep(3000);
+
+                if (CurrentCommand == Command.Quit)
                 {
                     return;
                 }
-
-                ConsolePrinter.PrintLine(ConsoleElements.Won, ConsoleColor.Green);
-                Thread.Sleep(3000);
             }
         }
 
-        private static string[] GetRandomForm()
+        public static void GetMenuCommand()
         {
-            return _random.Next(1, 7) switch
+            CurrentCommand = Console.ReadKey(true).Key switch
+            {
+                ConsoleKey.Spacebar => Command.Play,
+                ConsoleKey.R => Command.Results,
+                ConsoleKey.M => Command.Music,
+                ConsoleKey.Escape => Command.Exit,
+                _ => Command.None
+            };
+        }
+
+        private static string[] GetRandomObstacle()
+        {
+            return _random.Next(1, 8) switch
             {
                 1 => ConsoleElements.Block,
                 2 => ConsoleElements.Cactus,
@@ -186,40 +206,32 @@ namespace GameJumpty.Game.Core
                 4 => ConsoleElements.Camel,
                 5 => ConsoleElements.Gas,
                 6 => ConsoleElements.Snail,
+                7 => ConsoleElements.DarthVader,
                 _ => ConsoleElements.Cactus
             };
 
         }
 
-        public static void GetResults()
-        {
-        }
-
-        public static async Task<string> GetMenuCommand()
-        {
-            return await Task.Run(() =>
-            {
-                return Console.ReadKey(true).Key switch
-                {
-                    ConsoleKey.Spacebar => "PLAY",
-                    ConsoleKey.R => "RESULTS",
-                    ConsoleKey.Escape => "EXIT",
-                    _ => null
-                };
-            });
-        }
-
-        private static async Task SetDirectionByInput()
+        private static async Task SetDirectionByInputAsync(CancellationTokenSource source)
         {
             await Task.Run(() =>
             {
-                DirectionNow = Console.ReadKey(true).Key switch
+                var key = Console.ReadKey(true).Key;
+
+                if (key == ConsoleKey.Escape)
                 {
-                    ConsoleKey.Escape => null,
+                    CurrentCommand = Command.Quit;
+                    source.Cancel();
+                }
+
+                CurrentDirection = key switch
+                {
                     ConsoleKey.LeftArrow => Direction.Left,
+                    ConsoleKey.A => Direction.Left,
                     ConsoleKey.RightArrow => Direction.Right,
+                    ConsoleKey.D => Direction.Right,
                     ConsoleKey.UpArrow => IsAlreadyInAir ? Direction.Idle : Direction.Up,
-                    ConsoleKey.DownArrow => Direction.Down,
+                    ConsoleKey.W => IsAlreadyInAir ? Direction.Idle : Direction.Up,
                     _ => Direction.Idle
                 };
             });
@@ -227,7 +239,7 @@ namespace GameJumpty.Game.Core
 
         private static void MoveHorizontally(Character character)
         {
-            switch (DirectionNow)
+            switch (CurrentDirection)
             {
                 case Direction.Left:
                     character.Position--;
