@@ -1,28 +1,37 @@
 ﻿using GameJumpty.Game.Core;
+using GameJumpty.Game.Models.Enums;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace GameJumpty.Game
 {
     public class Program
     {
+        public Command CurrentCommand { get; set; }
+
         public static async Task Main()
         {
-            ConsoleManager.SetDefaultConsole(63, 33);
+            ConsoleManager.SetDefaultConsole(width: 63, height: 33);
 
             while (true)
             {
+                Console.Clear();
                 GameEngine.ShowMenu();
+                GameEngine.GetMenuCommand();
 
-                switch (await GameEngine.GetMenuCommand())
+                switch (GameEngine.CurrentCommand)
                 {
-                    case "PLAY":
-                        GameEngine.Play();
+                    case Command.Play:
+                        await GameEngine.PlayAsync(new CancellationTokenSource()).ConfigureAwait(true);
                         break;
-                    case "RESULTS":
-                        GameEngine.GetResults();
+                    case Command.Results:
+                        await ResultsManager.ShowResultsAsync().ConfigureAwait(true);
                         break;
-                    case "EXIT":
+                    case Command.Music:
+                        MusicManager.IsMusicOn = !MusicManager.IsMusicOn;
+                        break;
+                    case Command.Exit:
                         Environment.Exit(0);
                         break;
                 }

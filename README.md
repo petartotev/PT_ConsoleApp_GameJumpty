@@ -13,12 +13,14 @@ It was created in order to test the execution of a few parallel tasks. The expec
 ## Technologies
 
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 ## Instructions
 
 Use the left \[<\] and right \[>\] arrow keys to move around and the up \[^\] arrow key to jump!
 
 If you happily jump over a dozen \[12\] of cactuses, blocks and snakes you would WIN.
+
 Else - LOSE.
 
 ## Contents
