@@ -4,11 +4,11 @@
 
 Jumpy is a stick figure fighting for its life by jumping over a cactus, a stone block and a snake.
 
+![GitHub Logo](res/scrot/jumpty_all.jpg)
+
 The game would probably remind you of Chrome's dinosaur jumping game in case of no Internet.
 
 It was created in order to test the execution of a few parallel tasks. The expected result was for the game to constantly receive user keyboard input (\[<\], \[>\], \[^\]) and in the same time to visualize the 'moving' landscape without any interruptions.
-
-![GitHub Logo](res/scrot/jumpty_all.jpg)
 
 ## Technologies
 
